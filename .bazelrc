@@ -1,0 +1,7 @@
+# Use the BuildBuddy UI (authenticating to the "example" org in this example)
+common --bes_backend=example.buildbuddy.io
+common --bes_results_url=https://example.buildbuddy.io/invocation/
+
+# Import BuildBuddy API key
+import %workspace%/.git/info/buildbuddy-auth.bazelrc
+

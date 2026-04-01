@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -eu
+
+# tools/bazel: this wrapper script is invoked by bazelisk before running bazel.
+# Here, we use it to ensure that the BuildBuddy API key is set before we start bazel.
+
+# Your BuildBuddy org
+BUILDBUDDY_ORG=example
+# BuildBuddy CLI version to use (needed for login flow only)
+BUILDBUDDY_CLI_VERSION=5.0.335
+
+# BuildBuddy login (one-time setup)
+BUILDBUDDY_AUTH_BAZELRC="$(git rev-parse --show-toplevel)/.git/info/buildbuddy-auth.bazelrc"
+if ! [[ -f "$BUILDBUDDY_AUTH_BAZELRC" ]]; then
+  # Login via BuildBuddy UI.
+  # This "USE_BAZEL_VERSION" trick allows bazelisk to fetch the BB CLI,
+  # using the same fetching/caching logic that it uses to provision bazel itself.
+  USE_BAZEL_VERSION="buildbuddy-io/$BUILDBUDDY_CLI_VERSION" bazelisk login --org="$BUILDBUDDY_ORG" --allow_existing
+  # Write login credentials to workspace-scoped bazelrc
+  buildbuddy_api_key=$(git config --local --get buildbuddy.api-key)
+  echo "common --remote_header=x-buildbuddy-api-key=$buildbuddy_api_key" > "$BUILDBUDDY_AUTH_BAZELRC"
+fi
+
+# Run bazel from original dir
+exec "$BAZEL_REAL" "$@"
+
